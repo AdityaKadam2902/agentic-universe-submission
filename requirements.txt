@@ -1,0 +1,9 @@
+# Assignment A dependencies
+cryptography>=41.0.0
+python-dotenv>=1.0.0
+
+# Testing
+pytest>=7.4.0
+
+# Assignment B dependencies (if needed, add below)
+# These are placeholder - add actual Assignment B dependencies here

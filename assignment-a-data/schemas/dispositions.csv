@@ -1,0 +1,15 @@
+code,workflow,terminal,success,display_name
+NOT_CALLED,motor_renewal,false,false,Not Called
+CONFIRMED,motor_renewal,true,true,Confirmed
+DECLINED,motor_renewal,true,false,Declined
+INTERESTED,motor_renewal,false,false,Interested
+NOT_ELIGIBLE,motor_renewal,true,false,Not Eligible
+CALLBACK_REQUESTED,motor_renewal,false,false,Callback Requested
+APPOINTMENT_SET,motor_renewal,false,false,Appointment Set
+CONVERTED,motor_renewal,true,true,Converted
+NO_ANSWER,motor_renewal,false,false,No Answer
+WRONG_NUMBER,motor_renewal,true,false,Wrong Number
+DNC,motor_renewal,true,false,Do Not Call
+THIRD_PARTY,motor_renewal,true,false,Third Party
+NOT_AVAILABLE,motor_renewal,false,false,Not Available
+COLLECT_DETAILS,motor_renewal,false,false,Collect Details
