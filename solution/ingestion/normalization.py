@@ -36,6 +36,10 @@ DECIMAL_PREFIX_PATTERN = re.compile(
     re.IGNORECASE
 )
 
+# Valid comma grouping for decimals: Western (1,234,567) and Indian (1,23,456)
+DECIMAL_COMMA_WESTERN_PATTERN = re.compile(r"\d{1,3}(?:,\d{3})*(?:\.\d+)?")
+DECIMAL_COMMA_INDIAN_PATTERN = re.compile(r"\d{1,2}(?:,\d{2})*,\d{3}(?:\.\d+)?")
+
 
 def normalize_header(raw: str) -> str:
     """
@@ -182,7 +186,8 @@ def normalize_decimal(raw: str) -> Optional[Decimal]:
 
     Accepted formats:
     - Optional prefix: ₹, Rs, Rs., or INR (case-insensitive, optional whitespace)
-    - Commas as thousands separators
+    - Commas as thousands separators: Western (1,234,567) or Indian (1,23,456)
+      grouping; malformed grouping (e.g. 1,2,3, 12,34, 1,234,56) is rejected
     - Value must be >= 0
     - Round to 2 decimal places using ROUND_HALF_UP
 
@@ -197,6 +202,14 @@ def normalize_decimal(raw: str) -> Optional[Decimal]:
 
     # Remove currency prefix
     cleaned = DECIMAL_PREFIX_PATTERN.sub("", raw)
+
+    # Commas must form valid thousands-separator groups; otherwise reject
+    # rather than silently collapsing malformed grouping into a valid value
+    if "," in cleaned and not (
+        DECIMAL_COMMA_WESTERN_PATTERN.fullmatch(cleaned)
+        or DECIMAL_COMMA_INDIAN_PATTERN.fullmatch(cleaned)
+    ):
+        return None
 
     # Remove commas (thousands separators)
     cleaned = cleaned.replace(",", "")

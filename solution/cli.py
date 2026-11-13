@@ -118,7 +118,7 @@ def ingest_drop(db: Database, schema_registry: SchemaRegistry, drop_path: Path) 
         "malformed_events": total_stats.malformed_events,
         "duplicate_events_dropped": total_stats.duplicate_events_dropped,
         "orphan_events": recon_summary.get("orphan_events", 0),
-        "unknown_disposition_events": recon_summary.get("unknown_dispositions", 0),
+        "unknown_disposition_events": recon_summary.get("unknown_dispositions_current", 0),
     }
 
 
@@ -173,7 +173,7 @@ def cmd_ingest(args: argparse.Namespace) -> int:
                 final_stats = IngestionStats()
                 recon_summary = reconciliation.reconcile(final_stats)
                 agg["orphan_events"] = recon_summary.get("orphan_events", 0)
-                agg["unknown_disposition_events"] = recon_summary.get("unknown_dispositions", 0)
+                agg["unknown_disposition_events"] = recon_summary.get("unknown_dispositions_current", 0)
                 
                 print(f"\n=== Total ingestion complete ===")
                 print(f"  Lead rows: {agg['lead_rows_total']} total, {agg['lead_rows_rejected']} rejected")
