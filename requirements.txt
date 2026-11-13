@@ -1,6 +1,7 @@
 # Assignment A dependencies
 cryptography>=41.0.0
 python-dotenv>=1.0.0
+tzdata>=2024.1
 
 # Testing
 pytest>=7.4.0

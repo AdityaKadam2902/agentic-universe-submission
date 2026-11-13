@@ -8,9 +8,23 @@ from __future__ import annotations
 import hashlib
 import json
 import sqlite3
+from datetime import datetime
 from pathlib import Path
 from typing import Optional, Any, Dict, List, Tuple
 from contextlib import contextmanager
+
+
+def _adapt_datetime(value: datetime) -> str:
+    """Adapter for binding datetime values to SQLite parameters.
+
+    Reproduces the format of Python's deprecated default datetime adapter
+    (isoformat with a space separator) so stored values remain identical.
+    """
+    return value.isoformat(" ")
+
+
+# Register explicitly: the default adapter is deprecated as of Python 3.12
+sqlite3.register_adapter(datetime, _adapt_datetime)
 
 # Database constants
 DEFAULT_BUSY_TIMEOUT = 5000  # 5 seconds
