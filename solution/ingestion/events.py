@@ -112,23 +112,10 @@ class EventIngestion:
                             occurred_at_utc=result.occurred_at_utc,
                             phone_hmac=result.phone_hmac,
                             disposition_code=result.disposition_code,
-                            source_file_id=0,  # TODO: track file_id
+                            source_file_id=self._file_id or 0,
                             source_line=line_num,
                             conn=conn,
                         )
-                        
-                        # Update file stats for event ingestion
-                        if self._file_id:
-                            update_ingestion_file_stats(
-                                self.db,
-                                file_id=self._file_id,
-                                stats={
-                                    "events_total": stats.events_total,
-                                    "malformed_events": stats.malformed_events,
-                                    "duplicate_events_dropped": stats.duplicate_events_dropped,
-                                },
-                                conn=conn,
-                            )
 
                         # Create pending association
                         set_event_association(
@@ -156,6 +143,20 @@ class EventIngestion:
                                 result.call_id,
                                 conn,
                             )
+
+                # Persist per-file counters once the whole file has been read
+                # so trailing malformed/duplicate lines are never lost.
+                if self._file_id:
+                    update_ingestion_file_stats(
+                        self.db,
+                        file_id=self._file_id,
+                        stats={
+                            "events_total": stats.events_total,
+                            "malformed_events": stats.malformed_events,
+                            "duplicate_events_dropped": stats.duplicate_events_dropped,
+                        },
+                        conn=conn,
+                    )
 
     def _process_event_line(
         self,
@@ -200,14 +201,16 @@ class EventIngestion:
         # Call ID
         result.call_id = event_data.get("call_id")
 
-        # Timestamp normalization
+        # Timestamp normalization.
+        # An event without a parseable timestamp cannot become an immutable
+        # ledger fact (the ledger requires UTC-normalized times), so the
+        # line is treated as malformed rather than aborting the whole file.
         occurred_at = event_data.get("occurred_at")
-        if occurred_at:
-            result.occurred_at_utc = normalize_timestamp(str(occurred_at))
-        else:
-            # Use current UTC time
-            from datetime import datetime, timezone
-            result.occurred_at_utc = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        normalized_ts = normalize_timestamp(str(occurred_at)) if occurred_at else None
+        if normalized_ts is None:
+            result.is_malformed = True
+            return result
+        result.occurred_at_utc = normalized_ts
 
         # Phone handling
         phone = event_data.get("phone")
@@ -218,12 +221,18 @@ class EventIngestion:
                     workflow_id, normalized_phone
                 )
 
-        # Disposition code (if present)
-        disposition = event_data.get("disposition")
-        if isinstance(disposition, dict):
-            result.disposition_code = disposition.get("code")
-        elif isinstance(disposition, str) and disposition.strip():
-            result.disposition_code = disposition.strip()
+        # Disposition code (if present).
+        # The supplied generator emits a flat `disposition_code` string;
+        # a nested `disposition` object is accepted as a defensive fallback.
+        disposition_code = event_data.get("disposition_code")
+        if not disposition_code:
+            disposition = event_data.get("disposition")
+            if isinstance(disposition, dict):
+                disposition_code = disposition.get("code")
+            elif isinstance(disposition, str) and disposition.strip():
+                disposition_code = disposition.strip()
+        if disposition_code and str(disposition_code).strip():
+            result.disposition_code = str(disposition_code).strip()
 
         result.is_valid = True
         return result
@@ -439,6 +448,14 @@ class EventReconciliation:
             # Step 4: Mark unknown dispositions on already-linked events
             # After linking, check all linked events for unknown disposition codes
             self._mark_unknown_dispositions(conn, stats, summary)
+
+            # Live snapshot of currently-ignored unknown-disposition associations,
+            # so callers can report the current state rather than this call's delta
+            cursor = conn.execute(
+                "SELECT COUNT(*) as count FROM event_associations "
+                "WHERE association_status = 'ignored_unknown_disposition'"
+            )
+            summary["unknown_dispositions_current"] = cursor.fetchone()["count"]
 
             # Step 3: Count orphan events
             summary["orphan_events"] = self._count_orphan_events(conn)

@@ -87,10 +87,10 @@ class TestEventProcessing:
         events_dir = test_data / "events"
         jsonl_file = events_dir / "motor_renewal.jsonl"
         jsonl_file.write_text(
-            '{"event_id": "evt_001", "event_type": "call.initiated", "phone": "9876543210"}\n'
+            '{"occurred_at": "2026-11-20T12:00:00+05:30", "event_id": "evt_001", "event_type": "call.initiated", "phone": "9876543210"}\n'
             "\n"  # Empty line
             "   \n"  # Whitespace only
-            '{"event_id": "evt_002", "event_type": "call.initiated", "phone": "9876543211"}\n'
+            '{"occurred_at": "2026-11-20T12:00:00+05:30", "event_id": "evt_002", "event_type": "call.initiated", "phone": "9876543211"}\n'
         )
 
         checker = FileIdempotencyChecker(db)
@@ -111,9 +111,9 @@ class TestEventProcessing:
         events_dir = test_data / "events"
         jsonl_file = events_dir / "motor_renewal.jsonl"
         jsonl_file.write_text(
-            '{"event_id": "evt_001", "event_type": "call.initiated"}\n'
+            '{"occurred_at": "2026-11-20T12:00:00+05:30", "event_id": "evt_001", "event_type": "call.initiated"}\n'
             "not valid json\n"
-            '{"event_id": "evt_002", "event_type": "call.initiated"}\n'
+            '{"occurred_at": "2026-11-20T12:00:00+05:30", "event_id": "evt_002", "event_type": "call.initiated"}\n'
         )
 
         checker = FileIdempotencyChecker(db)
@@ -134,10 +134,10 @@ class TestEventProcessing:
         events_dir = test_data / "events"
         jsonl_file = events_dir / "motor_renewal.jsonl"
         jsonl_file.write_text(
-            '{"event_id": "evt_001", "event_type": "call.initiated"}\n'
+            '{"occurred_at": "2026-11-20T12:00:00+05:30", "event_id": "evt_001", "event_type": "call.initiated"}\n'
             '{"event_type": "call.initiated"}\n'  # Missing event_id
             '{"event_id": "   ", "event_type": "call.initiated"}\n'  # Blank event_id
-            '{"event_id": "evt_002", "event_type": "call.initiated"}\n'
+            '{"occurred_at": "2026-11-20T12:00:00+05:30", "event_id": "evt_002", "event_type": "call.initiated"}\n'
         )
 
         checker = FileIdempotencyChecker(db)
@@ -188,8 +188,8 @@ class TestDuplicateEvents:
         events_dir = test_data / "events"
         jsonl_file = events_dir / "motor_renewal.jsonl"
         jsonl_file.write_text(
-            '{"event_id": "evt_001", "event_type": "call.initiated", "phone": "9876543210"}\n'
-            '{"event_id": "evt_001", "event_type": "call.initiated", "phone": "9876543210"}\n'  # Duplicate
+            '{"occurred_at": "2026-11-20T12:00:00+05:30", "event_id": "evt_001", "event_type": "call.initiated", "phone": "9876543210"}\n'
+            '{"occurred_at": "2026-11-20T12:00:00+05:30", "event_id": "evt_001", "event_type": "call.initiated", "phone": "9876543210"}\n'  # Duplicate
         )
 
         checker = FileIdempotencyChecker(db)
@@ -217,11 +217,11 @@ class TestDuplicateEvents:
         
         # First file
         jsonl_file1 = events_dir / "motor_renewal_1.jsonl"
-        jsonl_file1.write_text('{"event_id": "evt_001", "event_type": "call.initiated", "phone": "9876543210"}\n')
+        jsonl_file1.write_text('{"occurred_at": "2026-11-20T12:00:00+05:30", "event_id": "evt_001", "event_type": "call.initiated", "phone": "9876543210"}\n')
 
         # Second file with same event_id
         jsonl_file2 = events_dir / "motor_renewal_2.jsonl"
-        jsonl_file2.write_text('{"event_id": "evt_001", "event_type": "call.initiated", "phone": "9876543210"}\n')
+        jsonl_file2.write_text('{"occurred_at": "2026-11-20T12:00:00+05:30", "event_id": "evt_001", "event_type": "call.initiated", "phone": "9876543210"}\n')
 
         checker = FileIdempotencyChecker(db)
         ingestion = EventIngestion(db, registry)
@@ -286,7 +286,7 @@ class TestEventPhoneHandling:
 
         events_dir = test_data / "events"
         jsonl_file = events_dir / "motor_renewal.jsonl"
-        jsonl_file.write_text('{"event_id": "evt_001", "event_type": "call.initiated", "phone": "+91 98765 43210"}\n')
+        jsonl_file.write_text('{"occurred_at": "2026-11-20T12:00:00+05:30", "event_id": "evt_001", "event_type": "call.initiated", "phone": "+91 98765 43210"}\n')
 
         checker = FileIdempotencyChecker(db)
         ingestion = EventIngestion(db, registry)
@@ -322,7 +322,7 @@ class TestEventPhoneHandling:
 
         events_dir = test_data / "events"
         jsonl_file = events_dir / "motor_renewal.jsonl"
-        jsonl_file.write_text('{"event_id": "evt_001", "event_type": "call.initiated", "call_id": "call_001"}\n')
+        jsonl_file.write_text('{"occurred_at": "2026-11-20T12:00:00+05:30", "event_id": "evt_001", "event_type": "call.initiated", "call_id": "call_001"}\n')
 
         checker = FileIdempotencyChecker(db)
         ingestion = EventIngestion(db, registry)
@@ -462,7 +462,7 @@ class TestEventReconciliation:
 
         # Ingest event first (before lead exists)
         jsonl_file = events_dir / "motor_renewal.jsonl"
-        jsonl_file.write_text('{"event_id": "evt_001", "event_type": "call.initiated", "phone": "9876543210"}\n')
+        jsonl_file.write_text('{"occurred_at": "2026-11-20T12:00:00+05:30", "event_id": "evt_001", "event_type": "call.initiated", "phone": "9876543210"}\n')
 
         checker = FileIdempotencyChecker(db)
         event_ingestion = EventIngestion(db, registry)
@@ -509,7 +509,7 @@ class TestEventReconciliation:
 
         # Setup: event + lead
         jsonl_file = events_dir / "motor_renewal.jsonl"
-        jsonl_file.write_text('{"event_id": "evt_001", "event_type": "call.initiated", "phone": "9876543210"}\n')
+        jsonl_file.write_text('{"occurred_at": "2026-11-20T12:00:00+05:30", "event_id": "evt_001", "event_type": "call.initiated", "phone": "9876543210"}\n')
 
         csv_file = leads_dir / "batch.csv"
         csv_file.write_text("customer_name,phone,policy_number\nJohn Doe,9876543210,POL1\n")
@@ -552,7 +552,7 @@ class TestEventReconciliation:
 
         # Ingest event
         jsonl_file = events_dir / "motor_renewal.jsonl"
-        jsonl_file.write_text('{"event_id": "evt_001", "event_type": "call.initiated", "phone": "9876543210"}\n')
+        jsonl_file.write_text('{"occurred_at": "2026-11-20T12:00:00+05:30", "event_id": "evt_001", "event_type": "call.initiated", "phone": "9876543210"}\n')
 
         checker = FileIdempotencyChecker(db)
         event_ingestion = EventIngestion(db, registry)
@@ -620,7 +620,7 @@ class TestCallLinkResolution:
         events_dir = test_data / "events"
         jsonl_file = events_dir / "motor_renewal.jsonl"
         # call.link has no phone
-        jsonl_file.write_text('{"event_id": "evt_link_001", "event_type": "call.link", "call_id": "call_001", "lead_id": "LEAD123"}\n')
+        jsonl_file.write_text('{"occurred_at": "2026-11-20T12:00:00+05:30", "event_id": "evt_link_001", "event_type": "call.link", "call_id": "call_001", "lead_id": "LEAD123"}\n')
 
         checker = FileIdempotencyChecker(db)
         ingestion = EventIngestion(db, registry)
@@ -648,7 +648,7 @@ class TestCallLinkResolution:
 
         # Ingest phone-bearing event first
         jsonl_file1 = events_dir / "motor_renewal_1.jsonl"
-        jsonl_file1.write_text('{"event_id": "evt_phone_001", "event_type": "call.initiated", "phone": "9876543210", "call_id": "call_001"}\n')
+        jsonl_file1.write_text('{"occurred_at": "2026-11-20T12:00:00+05:30", "event_id": "evt_phone_001", "event_type": "call.initiated", "phone": "9876543210", "call_id": "call_001"}\n')
 
         checker = FileIdempotencyChecker(db)
         event_ingestion = EventIngestion(db, registry)
@@ -656,7 +656,7 @@ class TestCallLinkResolution:
 
         # Ingest override event (before call.link)
         jsonl_file2 = events_dir / "motor_renewal_2.jsonl"
-        jsonl_file2.write_text('{"event_id": "evt_override_001", "event_type": "disposition.override", "call_id": "call_001", "disposition": {"code": "CONFIRMED"}}\n')
+        jsonl_file2.write_text('{"occurred_at": "2026-11-20T12:00:00+05:30", "event_id": "evt_override_001", "event_type": "disposition.override", "call_id": "call_001", "disposition_code": "CONFIRMED"}\n')
 
         event_ingestion.ingest_jsonl_file(jsonl_file2, "motor_renewal", checker, IngestionStats())
 
@@ -724,7 +724,7 @@ class TestDispositions:
 
         # Ingest event with known disposition (CONFIRMED is in dispositions.csv)
         jsonl_file = events_dir / "motor_renewal.jsonl"
-        jsonl_file.write_text('{"event_id": "evt_001", "event_type": "call.initiated", "phone": "9876543210", "disposition": {"code": "CONFIRMED"}}\n')
+        jsonl_file.write_text('{"occurred_at": "2026-11-20T12:00:00+05:30", "event_id": "evt_001", "event_type": "call.initiated", "phone": "9876543210", "disposition_code": "CONFIRMED"}\n')
 
         checker = FileIdempotencyChecker(db)
         event_ingestion = EventIngestion(db, registry)
@@ -757,7 +757,7 @@ class TestDispositions:
 
         # Ingest event with unknown disposition
         jsonl_file = events_dir / "motor_renewal.jsonl"
-        jsonl_file.write_text('{"event_id": "evt_001", "event_type": "call.initiated", "phone": "9876543210", "disposition": {"code": "UNKNOWN_CODE"}}\n')
+        jsonl_file.write_text('{"occurred_at": "2026-11-20T12:00:00+05:30", "event_id": "evt_001", "event_type": "call.initiated", "phone": "9876543210", "disposition_code": "UNKNOWN_CODE"}\n')
 
         checker = FileIdempotencyChecker(db)
         event_ingestion = EventIngestion(db, registry)
@@ -821,7 +821,7 @@ class TestEventImmutability:
 
         # Ingest event
         jsonl_file = events_dir / "motor_renewal.jsonl"
-        jsonl_file.write_text('{"event_id": "evt_001", "event_type": "call.initiated", "phone": "9876543210"}\n')
+        jsonl_file.write_text('{"occurred_at": "2026-11-20T12:00:00+05:30", "event_id": "evt_001", "event_type": "call.initiated", "phone": "9876543210"}\n')
 
         checker = FileIdempotencyChecker(db)
         event_ingestion = EventIngestion(db, registry)
@@ -893,7 +893,7 @@ class TestIdempotentEventReruns:
 
         events_dir = test_data / "events"
         jsonl_file = events_dir / "motor_renewal.jsonl"
-        jsonl_file.write_text('{"event_id": "evt_001", "event_type": "call.initiated", "phone": "9876543210"}\n')
+        jsonl_file.write_text('{"occurred_at": "2026-11-20T12:00:00+05:30", "event_id": "evt_001", "event_type": "call.initiated", "phone": "9876543210"}\n')
 
         checker = FileIdempotencyChecker(db)
         ingestion = EventIngestion(db, registry)
@@ -1042,9 +1042,9 @@ class TestMalformedEvents:
 
         jsonl_file = tmp_path / "test.jsonl"
         jsonl_file.write_text(
-            '{"event_id": "evt_001", "event_type": "call.initiated", "phone": "9876543210"}\n'
+            '{"occurred_at": "2026-11-20T12:00:00+05:30", "event_id": "evt_001", "event_type": "call.initiated", "phone": "9876543210"}\n'
             'not valid json\n'
-            '{"event_id": "evt_002", "event_type": "call.initiated", "phone": "9876543211"}\n'
+            '{"occurred_at": "2026-11-20T12:00:00+05:30", "event_id": "evt_002", "event_type": "call.initiated", "phone": "9876543211"}\n'
         )
 
         checker = FileIdempotencyChecker(db)
@@ -1062,10 +1062,10 @@ class TestMalformedEvents:
 
         jsonl_file = tmp_path / "test.jsonl"
         jsonl_file.write_text(
-            '{"event_id": "evt_001", "event_type": "call.initiated", "phone": "9876543210"}\n'
+            '{"occurred_at": "2026-11-20T12:00:00+05:30", "event_id": "evt_001", "event_type": "call.initiated", "phone": "9876543210"}\n'
             '\n'  # Empty line
             '   \n'  # Whitespace only
-            '{"event_id": "evt_002", "event_type": "call.initiated", "phone": "9876543211"}\n'
+            '{"occurred_at": "2026-11-20T12:00:00+05:30", "event_id": "evt_002", "event_type": "call.initiated", "phone": "9876543211"}\n'
         )
 
         checker = FileIdempotencyChecker(db)
@@ -1109,7 +1109,7 @@ class TestEventImmutability:
 
         jsonl_file = tmp_path / "test.jsonl"
         jsonl_file.write_text(
-            '{"event_id": "evt_001", "event_type": "call.initiated", "phone": "9876543210"}\n'
+            '{"occurred_at": "2026-11-20T12:00:00+05:30", "event_id": "evt_001", "event_type": "call.initiated", "phone": "9876543210"}\n'
         )
 
         checker = FileIdempotencyChecker(db)
@@ -1134,7 +1134,7 @@ class TestEventImmutability:
 
         jsonl_file = tmp_path / "test.jsonl"
         jsonl_file.write_text(
-            '{"event_id": "evt_001", "event_type": "call.initiated", "phone": "9876543210"}\n'
+            '{"occurred_at": "2026-11-20T12:00:00+05:30", "event_id": "evt_001", "event_type": "call.initiated", "phone": "9876543210"}\n'
         )
 
         checker = FileIdempotencyChecker(db)
@@ -1185,7 +1185,7 @@ class TestOverrideBeforeCallLink:
         jsonl_file = tmp_path / "test.jsonl"
         # First: override with call_id but no phone yet
         jsonl_file.write_text(
-            '{"event_id": "evt_override", "event_type": "disposition.override", "call_id": "call_001", "disposition": {"code": "CONFIRMED"}}\n'
+            '{"occurred_at": "2026-11-20T12:00:00+05:30", "event_id": "evt_override", "event_type": "disposition.override", "call_id": "call_001", "disposition": {"code": "CONFIRMED"}}\n'
         )
 
         checker = FileIdempotencyChecker(db)
@@ -1211,7 +1211,7 @@ class TestOverrideBeforeCallLink:
         jsonl_file = tmp_path / "test.jsonl"
         # Phase 1: call.link event
         jsonl_file.write_text(
-            '{"event_id": "evt_call_link", "event_type": "call.link", "call_id": "call_001", "phone": "9876543210"}\n'
+            '{"occurred_at": "2026-11-20T12:00:00+05:30", "event_id": "evt_call_link", "event_type": "call.link", "call_id": "call_001", "phone": "9876543210"}\n'
         )
 
         checker = FileIdempotencyChecker(db)
@@ -1222,7 +1222,7 @@ class TestOverrideBeforeCallLink:
         # Phase 2: Now add the override (in a new file to simulate late arrival)
         jsonl_file2 = tmp_path / "test2.jsonl"
         jsonl_file2.write_text(
-            '{"event_id": "evt_override", "event_type": "disposition.override", "call_id": "call_001", "disposition": {"code": "CONFIRMED"}}\n'
+            '{"occurred_at": "2026-11-20T12:00:00+05:30", "event_id": "evt_override", "event_type": "disposition.override", "call_id": "call_001", "disposition": {"code": "CONFIRMED"}}\n'
         )
 
         # Also need a lead for the phone

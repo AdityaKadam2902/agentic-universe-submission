@@ -259,7 +259,10 @@ class LeadIngestion:
                 if self._is_blank_row(raw_row):
                     continue
 
+                # Every non-blank data row read counts toward lead_rows_total
+                # (including rows that are subsequently rejected)
                 logical_row_number += 1
+                stats.lead_rows_total += 1
 
                 # Process row
                 self._process_row(
@@ -356,6 +359,10 @@ class LeadIngestion:
         raw_values: Dict[str, str] = {}
         normalized_values: Dict[str, Any] = {}
 
+        # Warnings accumulated for this row. Per spec, field warnings only
+        # count on otherwise-accepted rows; rejected rows add no warnings.
+        row_warnings = 0
+
         # Get field definitions in schema order
         fields = schema.get("fields", [])
 
@@ -377,7 +384,7 @@ class LeadIngestion:
             )
 
             if warning:
-                stats.field_warnings += 1
+                row_warnings += 1
 
             normalized_values[field_name] = normalized_value
 
@@ -387,7 +394,7 @@ class LeadIngestion:
         )
 
         if rejection_reason:
-            # Row is rejected
+            # Row is rejected (no field warnings counted for rejected rows)
             stats.lead_rows_rejected += 1
             insert_rejection(
                 self.db,
@@ -399,8 +406,8 @@ class LeadIngestion:
             )
             return
 
-        # Row is accepted
-        stats.lead_rows_total += 1
+        # Row is accepted; its optional-field warnings now count
+        stats.field_warnings += row_warnings
 
         # Check for duplicate lead (same workflow_id + phone_hmac)
         phone = normalized_values.get("phone")

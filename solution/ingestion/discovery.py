@@ -170,13 +170,16 @@ class FileIdempotencyChecker:
             if existing:
                 # File exists - check hash
                 if existing["content_hash"] == discovered.content_hash:
-                    # Same hash - already processed, this is a no-op
+                    # Same hash
                     if existing["status"] == "completed":
+                        # Already fully processed, this is a no-op
                         return True, existing["id"]
                     else:
-                        # Should not happen if we always complete in transaction
-                        # But handle gracefully
-                        return True, existing["id"]
+                        # A crash left this file pending (manifest recorded but
+                        # data transaction never completed). Reprocess it:
+                        # semantic deduplication (lead identity, event_id)
+                        # keeps re-ingestion safe.
+                        return False, existing["id"]
                 else:
                     # Same path, different hash - content changed!
                     raise ValueError(
@@ -236,6 +239,8 @@ class FileIdempotencyChecker:
         stats: Dict[str, int],
     ) -> None:
         """Mark a file as completed with its processing stats."""
+        from solution.db import _utc_now
+
         conn = self.db.connect()
         with transaction(self.db):
             conn.execute(

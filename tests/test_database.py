@@ -169,7 +169,7 @@ class TestFileIdempotency:
         events_dir = data_dir / "events"
         events_dir.mkdir()
         event_file = events_dir / "motor_renewal.jsonl"
-        event_file.write_text('{"event_id": "evt_001", "event_type": "call.initiated"}\n')
+        event_file.write_text('{"occurred_at": "2026-11-20T12:00:00+05:30", "event_id": "evt_001", "event_type": "call.initiated"}\n')
 
         return data_dir
 
@@ -212,6 +212,10 @@ class TestFileIdempotency:
         is_noop, file_id = checker.check_and_record_file(lead_file)
         assert is_noop is False
         assert file_id is not None
+
+        # Simulate successful processing: the ingestion marks the manifest
+        # row completed in the same transaction as its data
+        checker.complete_file(file_id, {})
 
         # Second ingestion - should be no-op
         is_noop, file_id2 = checker.check_and_record_file(lead_file)

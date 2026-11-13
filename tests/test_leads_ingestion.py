@@ -275,7 +275,8 @@ class TestLeadValidation:
 
         stats = ingestion.ingest_csv_file(csv_file, "motor_renewal", "batch_missing", checker)
 
-        assert stats.lead_rows_total == 0
+        # lead_rows_total counts all non-blank rows read, including rejected ones
+        assert stats.lead_rows_total == 1
         assert stats.lead_rows_rejected == 1
 
         # Verify rejection has correct reason (no PII)
@@ -772,7 +773,8 @@ class TestAllRejectedBatch:
 
         stats = ingestion.ingest_csv_file(csv_file, "motor_renewal", "batch_all_rejected", checker)
 
-        assert stats.lead_rows_total == 0
+        # Both rows were read (lead_rows_total), both rejected
+        assert stats.lead_rows_total == 2
         assert stats.lead_rows_rejected == 2
 
         # Verify batch was created
@@ -808,7 +810,7 @@ class TestAllRejectedBatch:
         cursor = conn.execute("SELECT * FROM ingestion_files WHERE workflow_id = 'motor_renewal'")
         file_record = dict(cursor.fetchone())
 
-        assert file_record["lead_rows_total"] == 0
+        assert file_record["lead_rows_total"] == 1  # one non-blank row read
         assert file_record["lead_rows_rejected"] == 1
         assert file_record["status"] == "completed"
 
@@ -863,7 +865,8 @@ class TestShortRows:
 
         # Should be rejected for missing phone, not crash
         assert stats.lead_rows_rejected == 1
-        assert stats.lead_rows_total == 0
+        # The short row was still read (non-blank), so it counts
+        assert stats.lead_rows_total == 1
 
 
 class TestPIIInDatabase:

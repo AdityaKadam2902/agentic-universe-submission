@@ -70,9 +70,10 @@ class ReportWriter:
         ingestion_stats: Dict[str, Any],
         rejections: List[Dict],
         lead_phones: Dict[int, str],
+        batches: List[Dict],
     ) -> None:
         """Write all five report files."""
-        self.write_batch_summary(projection, lead_facts)
+        self.write_batch_summary(projection, lead_facts, batches)
         self.write_daily_overview(daily_overviews)
         self.write_lead_report(projection, lead_facts, lead_phones)
         self.write_rejections(rejections)
@@ -82,17 +83,35 @@ class ReportWriter:
         self,
         projection: DomainProjection,
         lead_facts: List[LeadFact],
+        batches: List[Dict],
     ) -> None:
-        """Write batch_summary.csv."""
+        """Write batch_summary.csv.
+
+        Every ingested lead batch appears, including batches whose rows
+        were all rejected (represented with total_leads=0).
+        """
         path = self.output_dir / "batch_summary.csv"
-        
+
         # Group leads by (workflow_id, batch_id)
-        batches: Dict[Tuple[str, str], Dict] = {}
-        
+        batches_map: Dict[Tuple[str, str], Dict] = {}
+
+        # Seed with every ingested batch so zero-lead batches still appear
+        for batch in batches:
+            key = (batch["workflow_id"], batch["batch_id"])
+            batches_map.setdefault(key, {
+                "workflow_id": batch["workflow_id"],
+                "batch_id": batch["batch_id"],
+                "total_leads": 0,
+                "yet_to_reach_out": 0,
+                "in_progress_telephony_failed": 0,
+                "in_progress_dialed": 0,
+                "completed": 0,
+            })
+
         for lead in lead_facts:
             key = (lead.workflow_id, lead.batch_id)
-            if key not in batches:
-                batches[key] = {
+            if key not in batches_map:
+                batches_map[key] = {
                     "workflow_id": lead.workflow_id,
                     "batch_id": lead.batch_id,
                     "total_leads": 0,
@@ -101,10 +120,10 @@ class ReportWriter:
                     "in_progress_dialed": 0,
                     "completed": 0,
                 }
-            
-            batch = batches[key]
+
+            batch = batches_map[key]
             batch["total_leads"] += 1
-            
+
             bucket = lead.bucket
             if bucket == "yet_to_reach_out":
                 batch["yet_to_reach_out"] += 1
@@ -114,7 +133,7 @@ class ReportWriter:
                 batch["in_progress_dialed"] += 1
             elif bucket == "completed":
                 batch["completed"] += 1
-        
+
         # Write CSV
         with open(path, "w", newline="", encoding="utf-8") as f:
             writer = csv.writer(f)
@@ -127,9 +146,9 @@ class ReportWriter:
                 "in_progress_dialed",
                 "completed",
             ])
-            
-            for key in sorted(batches.keys()):
-                batch = batches[key]
+
+            for key in sorted(batches_map.keys()):
+                batch = batches_map[key]
                 writer.writerow([
                     batch["workflow_id"],
                     batch["batch_id"],
@@ -296,6 +315,12 @@ def generate_reports(
         "SELECT workflow_id, batch_id, row_number, reason FROM rejections ORDER BY workflow_id, batch_id, row_number"
     )
     rejections = [dict(row) for row in cursor.fetchall()]
+
+    # Get all ingested lead batches (for zero-lead batch representation)
+    cursor = conn.execute(
+        "SELECT workflow_id, batch_id FROM lead_batches ORDER BY workflow_id, batch_id"
+    )
+    batches = [dict(row) for row in cursor.fetchall()]
     
     # Get lead phones for masking (decrypt PII)
     cursor = conn.execute("SELECT id, pii_ciphertext FROM leads")
@@ -319,4 +344,5 @@ def generate_reports(
         ingestion_stats,
         rejections,
         lead_phones,
+        batches,
     )

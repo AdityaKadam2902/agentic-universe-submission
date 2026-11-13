@@ -65,7 +65,7 @@ class TestCallFacts:
         
         # Ingest a call.connected event without call.initiated
         jsonl_file = events_dir / "motor_renewal.jsonl"
-        jsonl_file.write_text('{"event_id": "evt_connected_001", "event_type": "call.connected", "call_id": "call_001", "phone": "9876543210"}\n')
+        jsonl_file.write_text('{"occurred_at": "2026-11-20T12:00:00+05:30", "event_id": "evt_connected_001", "event_type": "call.connected", "call_id": "call_001", "phone": "9876543210"}\n')
         
         checker = FileIdempotencyChecker(db)
         event_ingestion = EventIngestion(db, registry)
@@ -103,8 +103,8 @@ class TestCallFacts:
         # Ingest call.initiated and call.connected
         jsonl_file = events_dir / "motor_renewal.jsonl"
         jsonl_file.write_text(
-            '{"event_id": "evt_initiated_001", "event_type": "call.initiated", "phone": "9876543210", "call_id": "call_001"}\n'
-            '{"event_id": "evt_connected_001", "event_type": "call.connected", "call_id": "call_001"}\n'
+            '{"occurred_at": "2026-11-20T12:00:00+05:30", "event_id": "evt_initiated_001", "event_type": "call.initiated", "phone": "9876543210", "call_id": "call_001"}\n'
+            '{"occurred_at": "2026-11-20T12:00:00+05:30", "event_id": "evt_connected_001", "event_type": "call.connected", "call_id": "call_001"}\n'
         )
         
         checker = FileIdempotencyChecker(db)
@@ -145,8 +145,8 @@ class TestCallFacts:
         # Ingest call.initiated and call.telephony_failed
         jsonl_file = events_dir / "motor_renewal.jsonl"
         jsonl_file.write_text(
-            '{"event_id": "evt_initiated_001", "event_type": "call.initiated", "phone": "9876543210", "call_id": "call_001"}\n'
-            '{"event_id": "evt_telephony_failed_001", "event_type": "call.telephony_failed", "call_id": "call_001"}\n'
+            '{"occurred_at": "2026-11-20T12:00:00+05:30", "event_id": "evt_initiated_001", "event_type": "call.initiated", "phone": "9876543210", "call_id": "call_001"}\n'
+            '{"occurred_at": "2026-11-20T12:00:00+05:30", "event_id": "evt_telephony_failed_001", "event_type": "call.telephony_failed", "call_id": "call_001"}\n'
         )
         
         checker = FileIdempotencyChecker(db)
@@ -191,9 +191,9 @@ class TestEffectiveDisposition:
         # Ingest with multiple dispositions - override after set
         jsonl_file = events_dir / "motor_renewal.jsonl"
         jsonl_file.write_text(
-            '{"event_id": "evt_initiated_001", "event_type": "call.initiated", "phone": "9876543210", "call_id": "call_001"}\n'
-            '{"event_id": "evt_set_001", "event_type": "disposition.set", "call_id": "call_001", "disposition": {"code": "NO_ANSWER"}, "occurred_at": "2026-11-20T12:00:00+05:30"}\n'
-            '{"event_id": "evt_override_001", "event_type": "disposition.override", "call_id": "call_001", "disposition": {"code": "CONFIRMED"}, "occurred_at": "2026-11-20T13:00:00+05:30"}\n'
+            '{"occurred_at": "2026-11-20T12:00:00+05:30", "event_id": "evt_initiated_001", "event_type": "call.initiated", "phone": "9876543210", "call_id": "call_001"}\n'
+            '{"event_id": "evt_set_001", "event_type": "disposition.set", "call_id": "call_001", "disposition_code": "NO_ANSWER", "occurred_at": "2026-11-20T12:00:00+05:30"}\n'
+            '{"event_id": "evt_override_001", "event_type": "disposition.override", "call_id": "call_001", "disposition_code": "CONFIRMED", "occurred_at": "2026-11-20T13:00:00+05:30"}\n'
         )
         
         checker = FileIdempotencyChecker(db)
@@ -233,9 +233,9 @@ class TestEffectiveDisposition:
         # Ingest with override BEFORE set (but override should still win)
         jsonl_file = events_dir / "motor_renewal.jsonl"
         jsonl_file.write_text(
-            '{"event_id": "evt_initiated_001", "event_type": "call.initiated", "phone": "9876543210", "call_id": "call_001"}\n'
-            '{"event_id": "evt_override_001", "event_type": "disposition.override", "call_id": "call_001", "disposition": {"code": "CONFIRMED"}, "occurred_at": "2026-11-20T12:00:00+05:30"}\n'
-            '{"event_id": "evt_set_001", "event_type": "disposition.set", "call_id": "call_001", "disposition": {"code": "DECLINED"}, "occurred_at": "2026-11-20T13:00:00+05:30"}\n'
+            '{"occurred_at": "2026-11-20T12:00:00+05:30", "event_id": "evt_initiated_001", "event_type": "call.initiated", "phone": "9876543210", "call_id": "call_001"}\n'
+            '{"event_id": "evt_override_001", "event_type": "disposition.override", "call_id": "call_001", "disposition_code": "CONFIRMED", "occurred_at": "2026-11-20T12:00:00+05:30"}\n'
+            '{"event_id": "evt_set_001", "event_type": "disposition.set", "call_id": "call_001", "disposition_code": "DECLINED", "occurred_at": "2026-11-20T13:00:00+05:30"}\n'
         )
         
         checker = FileIdempotencyChecker(db)
@@ -306,8 +306,8 @@ class TestLeadBuckets:
         # Ingest with terminal disposition (CONFIRMED is terminal)
         jsonl_file = events_dir / "motor_renewal.jsonl"
         jsonl_file.write_text(
-            '{"event_id": "evt_initiated_001", "event_type": "call.initiated", "phone": "9876543210", "call_id": "call_001"}\n'
-            '{"event_id": "evt_set_001", "event_type": "disposition.set", "call_id": "call_001", "disposition": {"code": "CONFIRMED"}, "occurred_at": "2026-11-20T12:00:00+05:30"}\n'
+            '{"occurred_at": "2026-11-20T12:00:00+05:30", "event_id": "evt_initiated_001", "event_type": "call.initiated", "phone": "9876543210", "call_id": "call_001"}\n'
+            '{"event_id": "evt_set_001", "event_type": "disposition.set", "call_id": "call_001", "disposition_code": "CONFIRMED", "occurred_at": "2026-11-20T12:00:00+05:30"}\n'
         )
         
         checker = FileIdempotencyChecker(db)
@@ -347,8 +347,8 @@ class TestLeadBuckets:
         # Ingest with telephony_failed (no disposition)
         jsonl_file = events_dir / "motor_renewal.jsonl"
         jsonl_file.write_text(
-            '{"event_id": "evt_initiated_001", "event_type": "call.initiated", "phone": "9876543210", "call_id": "call_001"}\n'
-            '{"event_id": "evt_telephony_failed_001", "event_type": "call.telephony_failed", "call_id": "call_001"}\n'
+            '{"occurred_at": "2026-11-20T12:00:00+05:30", "event_id": "evt_initiated_001", "event_type": "call.initiated", "phone": "9876543210", "call_id": "call_001"}\n'
+            '{"occurred_at": "2026-11-20T12:00:00+05:30", "event_id": "evt_telephony_failed_001", "event_type": "call.telephony_failed", "call_id": "call_001"}\n'
         )
         
         checker = FileIdempotencyChecker(db)
@@ -388,8 +388,8 @@ class TestLeadBuckets:
         # Ingest with call.initiated and call.connected but no disposition
         jsonl_file = events_dir / "motor_renewal.jsonl"
         jsonl_file.write_text(
-            '{"event_id": "evt_initiated_001", "event_type": "call.initiated", "phone": "9876543210", "call_id": "call_001"}\n'
-            '{"event_id": "evt_connected_001", "event_type": "call.connected", "call_id": "call_001"}\n'
+            '{"occurred_at": "2026-11-20T12:00:00+05:30", "event_id": "evt_initiated_001", "event_type": "call.initiated", "phone": "9876543210", "call_id": "call_001"}\n'
+            '{"occurred_at": "2026-11-20T12:00:00+05:30", "event_id": "evt_connected_001", "event_type": "call.connected", "call_id": "call_001"}\n'
         )
         
         checker = FileIdempotencyChecker(db)
